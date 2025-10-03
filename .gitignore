@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Environment variables
+.env*
+!.env.example
+
+# Logs
+*.log*
+
+# Cache directories
+.cache/
+.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
