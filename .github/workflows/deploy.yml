@@ -1,20 +1,67 @@
-# Version: 1.0.4
+# Version: 1.0.6
 # Last Updated: 2025-10-08
 
-name: Automatic SSH Deployment
+name: Automatic Deployment
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Set to true to skip actual upload/remote commands (dry run)'
+        required: false
+        default: 'false'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to Server via SSH
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (generate)
+        run: pnpm build
+
+      - name: Upload build to server (SCP)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true') }}
+        uses: appleboy/scp-action@v0.1.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "dist/*"
+          target: "~/vue-date-calculator"
+
+      - name: Run remote post-deploy commands
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true') }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -22,18 +69,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            echo "Starting deployment..."
-
-            # Navigate to the Laravel app directory
+            echo "Running post-deploy tasks on server"
             cd ~/vue-date-calculator
-
-            # Pull latest changes from main branch
-            echo "Pulling latest changes from GitHub..."
-            git pull origin main
-
-            # Install dependencies
-            pnpm install
-            # Build the application
-            pnpm build
-
-            echo "Deployment completed successfully!"
+            date > .deploy_timestamp
+            echo "Remote tasks completed"
