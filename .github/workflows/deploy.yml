@@ -1,0 +1,39 @@
+# Version: 1.0.4
+# Last Updated: 2025-10-08
+
+name: Automatic SSH Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            echo "Starting deployment..."
+
+            # Navigate to the Laravel app directory
+            cd ~/vue-date-calculator
+
+            # Pull latest changes from main branch
+            echo "Pulling latest changes from GitHub..."
+            git pull origin main
+
+            # Install dependencies
+            pnpm install
+            # Build the application
+            pnpm run generate
+
+            echo "Deployment completed successfully!"

@@ -1,105 +1,6 @@
-<template>
-  <v-card class="mx-auto" elevation="8">
-    <v-card-title class="text-h4 text-center py-6 bg-primary">
-      Date Calculator
-    </v-card-title>
-
-    <v-card-text class="pa-6">
-      <v-form ref="formRef" v-model="isFormValid" @submit.prevent="calculate">
-        <!-- Quantity Input -->
-        <v-text-field
-          v-model.number="quantity"
-          label="Quantity"
-          type="number"
-          variant="outlined"
-          :rules="quantityRules"
-          :error-messages="quantityError"
-          density="comfortable"
-          class="mb-4"
-          required
-        />
-
-        <!-- Operator Select -->
-        <v-select
-          v-model="operator"
-          label="Operation"
-          :items="operatorOptions"
-          variant="outlined"
-          density="comfortable"
-          class="mb-4"
-        />
-
-        <!-- Time Unit Select -->
-        <v-select
-          v-model="timeUnit"
-          label="Time Unit"
-          :items="timeUnitOptions"
-          variant="outlined"
-          density="comfortable"
-          class="mb-4"
-        />
-
-        <!-- Calculate Button -->
-        <v-btn
-          type="submit"
-          color="primary"
-          size="large"
-          block
-          :loading="isCalculating"
-          :disabled="!isFormValid"
-          class="mb-6"
-        >
-          Calculate
-        </v-btn>
-
-        <!-- Results Display -->
-        <v-divider class="my-6" />
-
-        <v-card v-if="result" variant="tonal" color="primary" class="pa-4">
-          <v-card-subtitle class="text-overline mb-2">
-            Current Date/Time
-          </v-card-subtitle>
-          <v-card-text class="text-h6 py-2">
-            {{ formatDateTime(inputDate) }}
-          </v-card-text>
-
-          <v-divider class="my-4" />
-
-          <v-card-subtitle class="text-overline mb-2">
-            Calculated Date/Time
-          </v-card-subtitle>
-          <v-card-text class="text-h6 py-2">
-            {{ formatDateTime(result) }}
-          </v-card-text>
-
-          <v-divider class="my-4" />
-
-          <v-card-subtitle class="text-overline mb-2">
-            Operation
-          </v-card-subtitle>
-          <v-card-text class="text-body-1">
-            {{ operationDescription }}
-          </v-card-text>
-        </v-card>
-
-        <!-- Error Display -->
-        <v-alert
-          v-if="errorMessage"
-          type="error"
-          variant="tonal"
-          class="mt-4"
-          closable
-          @click:close="errorMessage = ''"
-        >
-          {{ errorMessage }}
-        </v-alert>
-      </v-form>
-    </v-card-text>
-  </v-card>
-</template>
-
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import packageJson from '../../package.json'
 
 // Types
 type Operator = 'add' | 'subtract'
@@ -113,7 +14,7 @@ interface SelectOption {
 // Form state
 const formRef = ref()
 const isFormValid = ref(false)
-const quantity = ref<number | null>(null)
+const quantity = ref<number | null>(1)
 const operator = ref<Operator>('add')
 const timeUnit = ref<TimeUnit>('days')
 
@@ -140,7 +41,7 @@ const timeUnitOptions: SelectOption[] = [
 
 // Validation rules
 const quantityRules = [
-  (v: number | null) => v !== null && v !== undefined && v !== '' || 'Quantity is required',
+  (v: number | null) => v !== null && v !== undefined || 'Quantity is required',
   (v: number | null) => v !== null && !isNaN(v) || 'Must be a valid number',
   (v: number | null) => v !== null && Number.isInteger(v) || 'Must be a whole number',
   (v: number | null) => v !== null && v >= 0 || 'Must be a positive number'
@@ -220,11 +121,23 @@ function formatDateTime(date: Date): string {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
 
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+  // Only show time for minutes and hours
+  if (timeUnit.value === 'minutes' || timeUnit.value === 'hours') {
+    let hours = date.getHours()
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    const seconds = String(date.getSeconds()).padStart(2, '0')
+
+    // Convert to 12-hour format
+    const ampm = hours >= 12 ? 'PM' : 'AM'
+    hours = hours % 12
+    hours = hours ? hours : 12 // 0 should be 12
+    const hoursStr = String(hours).padStart(2, '0')
+
+    return `${year}-${month}-${day} ${hoursStr}:${minutes}:${seconds} ${ampm}`
+  }
+
+  return `${year}-${month}-${day}`
 }
 
 // Validate date
@@ -297,6 +210,127 @@ async function calculate() {
   }
 }
 </script>
+
+<template>
+  <VCard class="mx-auto" elevation="8">
+    <VCardTitle class="text-h4 text-center py-2 bg-primary">
+      Date Calculator
+    </VCardTitle>
+
+    <VCardText class="pa-6">
+      <VRow>
+        <!-- Input Section -->
+        <VCol cols="12" md="6">
+          <VForm ref="formRef" v-model="isFormValid" @submit.prevent="calculate">
+            <!-- Quantity Input -->
+            <VTextField
+              v-model.number="quantity"
+              label="Quantity"
+              type="number"
+              variant="outlined"
+              :rules="quantityRules"
+              :error-messages="quantityError"
+              density="comfortable"
+              class="mb-4"
+              required
+            />
+
+            <!-- Operator Select -->
+            <VSelect
+              v-model="operator"
+              label="Operation"
+              :items="operatorOptions"
+              variant="outlined"
+              density="comfortable"
+              class="mb-4"
+            />
+
+            <!-- Time Unit Select -->
+            <VSelect
+              v-model="timeUnit"
+              label="Time Unit"
+              :items="timeUnitOptions"
+              variant="outlined"
+              density="comfortable"
+              class="mb-4"
+            />
+
+            <!-- Calculate Button -->
+            <VBtn
+              type="submit"
+              color="primary"
+              size="large"
+              block
+              :loading="isCalculating"
+              :disabled="!isFormValid"
+              class="mb-4"
+            >
+              Calculate
+            </VBtn>
+
+            <!-- Error Display -->
+            <VAlert
+              v-if="errorMessage"
+              type="error"
+              variant="tonal"
+              closable
+              @click:close="errorMessage = ''"
+            >
+              {{ errorMessage }}
+            </VAlert>
+          </VForm>
+        </VCol>
+
+        <!-- Divider for mobile -->
+        <VCol cols="12" class="d-md-none">
+          <VDivider />
+        </VCol>
+
+        <!-- Output Section -->
+        <VCol cols="12" md="6">
+          <VCard v-if="result" variant="tonal" color="primary" class="pa-4">
+            <VCardSubtitle class="text-overline mb-2">
+              Current Date/Time
+            </VCardSubtitle>
+            <VCardText class="text-h6 py-2">
+              {{ inputDate ? formatDateTime(inputDate) : '' }}
+            </VCardText>
+
+            <VDivider class="my-4" />
+
+            <VCardSubtitle class="text-overline mb-2">
+              Calculated Date/Time
+            </VCardSubtitle>
+            <VCardText class="text-h6 py-2">
+              {{ formatDateTime(result) }}
+            </VCardText>
+
+            <VDivider class="my-4" />
+
+            <VCardSubtitle class="text-overline mb-2">
+              Operation
+            </VCardSubtitle>
+            <VCardText class="text-body-1">
+              {{ operationDescription }}
+            </VCardText>
+          </VCard>
+
+          <VCard v-else variant="outlined" class="pa-4 text-center">
+            <VCardText class="text-body-1 text-medium-emphasis">
+              Results will appear here after calculation
+            </VCardText>
+          </VCard>
+        </VCol>
+      </VRow>
+    </VCardText>
+
+    <VCardActions class="px-6 justify-end bg-blue-grey-lighten-5">
+      <span class="text-caption text-medium-emphasis">
+        v{{ packageJson.version }}
+      </span>
+    </VCardActions>
+  </VCard>
+</template>
 
 <style scoped>
 .v-card-title {
