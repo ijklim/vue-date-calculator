@@ -34,6 +34,6 @@ jobs:
             # Install dependencies
             pnpm install
             # Build the application
-            pnpm run generate
+            pnpm build
 
             echo "Deployment completed successfully!"
