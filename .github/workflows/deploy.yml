@@ -1,5 +1,5 @@
-# Version: 1.0.6
-# Last Updated: 2025-10-08
+# Version: 1.0.11
+# Last Updated: 2025-10-09
 
 name: Automatic Deployment
 
@@ -44,6 +44,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm exec vue-tsc --noEmit
+
+      - name: Run tests
+        run: pnpm test:run
 
       - name: Build (generate)
         run: pnpm build
